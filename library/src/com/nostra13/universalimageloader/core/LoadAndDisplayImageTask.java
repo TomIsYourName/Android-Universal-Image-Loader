@@ -16,7 +16,10 @@
 package com.nostra13.universalimageloader.core;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Handler;
+import android.provider.MediaStore;
+
 import com.nostra13.universalimageloader.core.assist.FailReason;
 import com.nostra13.universalimageloader.core.assist.FailReason.FailType;
 import com.nostra13.universalimageloader.core.assist.ImageScaleType;
@@ -133,7 +136,17 @@ final class LoadAndDisplayImageTask implements Runnable, IoUtils.CopyListener {
 
 			bmp = configuration.memoryCache.get(memoryCacheKey);
 			if (bmp == null || bmp.isRecycled()) {
-				bmp = tryLoadBitmap();
+				
+				if(imageLoadingInfo.resolver != null && imageLoadingInfo.mediaId != 0) {
+					bmp = MediaStore.Images.Thumbnails.getThumbnail(imageLoadingInfo.resolver, imageLoadingInfo.mediaId, 
+							imageLoadingInfo.thumbnailKind, (BitmapFactory.Options) null);
+					if (bmp == null || bmp.isRecycled()) {
+						bmp = tryLoadBitmap();
+					}
+				} else {
+					bmp = tryLoadBitmap();
+				}
+				
 				if (bmp == null) return; // listener callback already was fired
 
 				checkTaskNotActual();
@@ -478,5 +491,10 @@ final class LoadAndDisplayImageTask implements Runnable, IoUtils.CopyListener {
 	 * @since 1.9.1
 	 */
 	class TaskCancelledException extends Exception {
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
 	}
 }

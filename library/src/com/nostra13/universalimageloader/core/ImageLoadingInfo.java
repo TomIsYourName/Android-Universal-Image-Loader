@@ -15,6 +15,10 @@
  *******************************************************************************/
 package com.nostra13.universalimageloader.core;
 
+import android.R.integer;
+import android.content.ContentResolver;
+import android.provider.MediaStore;
+
 import com.nostra13.universalimageloader.core.listener.ImageLoadingListener;
 import com.nostra13.universalimageloader.core.listener.ImageLoadingProgressListener;
 import com.nostra13.universalimageloader.core.assist.ImageSize;
@@ -42,6 +46,9 @@ final class ImageLoadingInfo {
 	final ImageLoadingListener listener;
 	final ImageLoadingProgressListener progressListener;
 	final ReentrantLock loadFromUriLock;
+	ContentResolver resolver = null;
+	long mediaId = 0;
+	int thumbnailKind = MediaStore.Images.Thumbnails.MINI_KIND;
 
 	public ImageLoadingInfo(String uri, ImageAware imageAware, ImageSize targetSize, String memoryCacheKey,
 			DisplayImageOptions options, ImageLoadingListener listener,
@@ -54,5 +61,22 @@ final class ImageLoadingInfo {
 		this.progressListener = progressListener;
 		this.loadFromUriLock = loadFromUriLock;
 		this.memoryCacheKey = memoryCacheKey;
+	}
+	
+	public ImageLoadingInfo(ContentResolver resolver, String uri, long mediaId, ImageAware imageAware, ImageSize targetSize, String memoryCacheKey,
+			DisplayImageOptions options, ImageLoadingListener listener,
+			ImageLoadingProgressListener progressListener, ReentrantLock loadFromUriLock) {
+		this(uri, imageAware, targetSize, memoryCacheKey, options, listener, progressListener, loadFromUriLock);
+		this.resolver = resolver;
+		this.mediaId = mediaId;
+	}
+	
+	public ImageLoadingInfo(ContentResolver resolver, String uri, long mediaId, int thumbnailKind, ImageAware imageAware, ImageSize targetSize, String memoryCacheKey,
+			DisplayImageOptions options, ImageLoadingListener listener,
+			ImageLoadingProgressListener progressListener, ReentrantLock loadFromUriLock) {
+		this(uri, imageAware, targetSize, memoryCacheKey, options, listener, progressListener, loadFromUriLock);
+		this.resolver = resolver;
+		this.mediaId = mediaId;
+		this.thumbnailKind = thumbnailKind;
 	}
 }
