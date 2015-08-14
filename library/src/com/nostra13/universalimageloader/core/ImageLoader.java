@@ -385,6 +385,19 @@ public class ImageLoader {
 	 * 
 	 * @param resolver
 	 * @param uri
+	 * @param mediaId
+	 * @param imageView
+	 * @param options
+	 */
+	public void displayImage(ContentResolver resolver, String uri, long mediaId, ImageAware imageAware, DisplayImageOptions options) {
+        this.displayImage(resolver, uri, mediaId, MediaStore.Images.Thumbnails.MINI_KIND,
+        		imageAware, options, (ImageLoadingListener)null, (ImageLoadingProgressListener)null);
+    }
+	
+	/**
+	 * 
+	 * @param resolver
+	 * @param uri
 	 * @param mediaId The local image mediaId that comes from the android system media database
 	 * @param thumbnailKind The local image thumbnail kind that comes from the android system media thumbnail database
 	 * @param imageView
@@ -408,7 +421,6 @@ public class ImageLoader {
 			options = configuration.defaultDisplayImageOptions;
 		}
 
-		//@TODO ???
 		if (TextUtils.isEmpty(uri)) {
 			engine.cancelDisplayTaskFor(imageAware);
 			listener.onLoadingStarted(uri, imageAware.getWrappedView());

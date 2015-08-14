@@ -20,6 +20,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.BitmapFactory.Options;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
+
 import com.nostra13.universalimageloader.core.assist.ImageScaleType;
 import com.nostra13.universalimageloader.core.assist.ImageSize;
 import com.nostra13.universalimageloader.core.download.ImageDownloader.Scheme;
@@ -57,6 +58,34 @@ public class BaseImageDecoder implements ImageDecoder {
 		this.loggingEnabled = loggingEnabled;
 	}
 
+	@Override
+	public Bitmap decode(ImageDecodingInfo decodingInfo, Bitmap thumbnail) throws IOException {
+		Bitmap decodedBitmap;
+		ImageFileInfo imageInfo;
+
+		InputStream imageStream = getImageStream(decodingInfo);
+		if (imageStream == null) {
+			L.e(ERROR_NO_IMAGE_STREAM, decodingInfo.getImageKey());
+			return null;
+		}
+		try {
+			imageInfo = defineImageSizeAndRotation(imageStream, decodingInfo);
+			imageStream = resetStream(imageStream, decodingInfo);
+			prepareDecodingOptions(imageInfo.imageSize, decodingInfo);
+			decodedBitmap = thumbnail;
+		} finally {
+			IoUtils.closeSilently(imageStream);
+		}
+
+		if (decodedBitmap == null) {
+			L.e(ERROR_CANT_DECODE_IMAGE, decodingInfo.getImageKey());
+		} else {
+			decodedBitmap = considerExactScaleAndOrientatiton(decodedBitmap, decodingInfo, imageInfo.exif.rotation,
+					imageInfo.exif.flipHorizontal);
+		}
+		return decodedBitmap;
+	}
+	
 	/**
 	 * Decodes image from URI into {@link Bitmap}. Image is scaled close to incoming {@linkplain ImageSize target size}
 	 * during decoding (depend on incoming parameters).

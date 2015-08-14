@@ -15,7 +15,6 @@
  *******************************************************************************/
 package com.nostra13.universalimageloader.core;
 
-import android.R.integer;
 import android.content.ContentResolver;
 import android.provider.MediaStore;
 

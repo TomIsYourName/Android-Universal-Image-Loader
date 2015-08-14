@@ -15,6 +15,12 @@
  *******************************************************************************/
 package com.nostra13.universalimageloader.core;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
+
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Handler;
@@ -35,12 +41,6 @@ import com.nostra13.universalimageloader.core.listener.ImageLoadingListener;
 import com.nostra13.universalimageloader.core.listener.ImageLoadingProgressListener;
 import com.nostra13.universalimageloader.utils.IoUtils;
 import com.nostra13.universalimageloader.utils.L;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Presents load'n'display image task. Used to load image from Internet or file system, decode it to {@link Bitmap}, and
@@ -137,15 +137,7 @@ final class LoadAndDisplayImageTask implements Runnable, IoUtils.CopyListener {
 			bmp = configuration.memoryCache.get(memoryCacheKey);
 			if (bmp == null || bmp.isRecycled()) {
 				
-				if(imageLoadingInfo.resolver != null && imageLoadingInfo.mediaId != 0) {
-					bmp = MediaStore.Images.Thumbnails.getThumbnail(imageLoadingInfo.resolver, imageLoadingInfo.mediaId, 
-							imageLoadingInfo.thumbnailKind, (BitmapFactory.Options) null);
-					if (bmp == null || bmp.isRecycled()) {
-						bmp = tryLoadBitmap();
-					}
-				} else {
-					bmp = tryLoadBitmap();
-				}
+				bmp = tryLoadBitmap();
 				
 				if (bmp == null) return; // listener callback already was fired
 
@@ -227,33 +219,44 @@ final class LoadAndDisplayImageTask implements Runnable, IoUtils.CopyListener {
 	private Bitmap tryLoadBitmap() throws TaskCancelledException {
 		Bitmap bitmap = null;
 		try {
-			File imageFile = configuration.diskCache.get(uri);
-			if (imageFile != null && imageFile.exists()) {
-				L.d(LOG_LOAD_IMAGE_FROM_DISK_CACHE, memoryCacheKey);
-				loadedFrom = LoadedFrom.DISC_CACHE;
-
-				checkTaskNotActual();
-				bitmap = decodeImage(Scheme.FILE.wrap(imageFile.getAbsolutePath()));
+			if(imageLoadingInfo.resolver != null && imageLoadingInfo.mediaId != 0) {// try load thumbnail
+				bitmap = MediaStore.Images.Thumbnails.getThumbnail(imageLoadingInfo.resolver, imageLoadingInfo.mediaId, 
+						imageLoadingInfo.thumbnailKind, (BitmapFactory.Options) null);
 			}
-			if (bitmap == null || bitmap.getWidth() <= 0 || bitmap.getHeight() <= 0) {
-				L.d(LOG_LOAD_IMAGE_FROM_NETWORK, memoryCacheKey);
-				loadedFrom = LoadedFrom.NETWORK;
+			
+			if(bitmap != null && !bitmap.isRecycled()) {
+				return decodeImage(uri, bitmap);
+			} else {
+				File imageFile = configuration.diskCache.get(uri);
+				if (imageFile != null && imageFile.exists()) {
+					L.d(LOG_LOAD_IMAGE_FROM_DISK_CACHE, memoryCacheKey);
+					loadedFrom = LoadedFrom.DISC_CACHE;
 
-				String imageUriForDecoding = uri;
-				if (options.isCacheOnDisk() && tryCacheImageOnDisk()) {
-					imageFile = configuration.diskCache.get(uri);
-					if (imageFile != null) {
-						imageUriForDecoding = Scheme.FILE.wrap(imageFile.getAbsolutePath());
-					}
+					checkTaskNotActual();
+					bitmap = decodeImage(Scheme.FILE.wrap(imageFile.getAbsolutePath()));
 				}
-
-				checkTaskNotActual();
-				bitmap = decodeImage(imageUriForDecoding);
-
 				if (bitmap == null || bitmap.getWidth() <= 0 || bitmap.getHeight() <= 0) {
-					fireFailEvent(FailType.DECODING_ERROR, null);
+					L.d(LOG_LOAD_IMAGE_FROM_NETWORK, memoryCacheKey);
+					loadedFrom = LoadedFrom.NETWORK;
+
+					String imageUriForDecoding = uri;
+					if (options.isCacheOnDisk() && tryCacheImageOnDisk()) {
+						imageFile = configuration.diskCache.get(uri);
+						if (imageFile != null) {
+							imageUriForDecoding = Scheme.FILE.wrap(imageFile.getAbsolutePath());
+						}
+					}
+
+					checkTaskNotActual();
+					
+					bitmap = decodeImage(imageUriForDecoding);
 				}
 			}
+			
+			if (bitmap == null || bitmap.getWidth() <= 0 || bitmap.getHeight() <= 0) {
+				fireFailEvent(FailType.DECODING_ERROR, null);
+			}
+			
 		} catch (IllegalStateException e) {
 			fireFailEvent(FailType.NETWORK_DENIED, null);
 		} catch (TaskCancelledException e) {
@@ -276,6 +279,13 @@ final class LoadAndDisplayImageTask implements Runnable, IoUtils.CopyListener {
 		ImageDecodingInfo decodingInfo = new ImageDecodingInfo(memoryCacheKey, imageUri, uri, targetSize, viewScaleType,
 				getDownloader(), options);
 		return decoder.decode(decodingInfo);
+	}
+	
+	private Bitmap decodeImage(String imageUri, Bitmap thumbnail) throws IOException {
+		ViewScaleType viewScaleType = imageAware.getScaleType();
+		ImageDecodingInfo decodingInfo = new ImageDecodingInfo(memoryCacheKey, imageUri, uri, targetSize, viewScaleType,
+				getDownloader(), options);
+		return decoder.decode(decodingInfo, thumbnail);
 	}
 
 	/** @return <b>true</b> - if image was downloaded successfully; <b>false</b> - otherwise */

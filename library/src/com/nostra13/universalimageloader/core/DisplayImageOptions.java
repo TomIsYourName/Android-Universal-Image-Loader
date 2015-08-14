@@ -20,6 +20,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory.Options;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
+
 import com.nostra13.universalimageloader.core.listener.ImageLoadingListener;
 import com.nostra13.universalimageloader.core.assist.ImageScaleType;
 import com.nostra13.universalimageloader.core.display.BitmapDisplayer;
@@ -220,6 +221,7 @@ public final class DisplayImageOptions {
 		private Handler handler = null;
 		private boolean isSyncLoading = false;
 
+		@SuppressWarnings("deprecation")
 		public Builder() {
 			decodingOptions.inPurgeable = true;
 			decodingOptions.inInputShareable = true;
