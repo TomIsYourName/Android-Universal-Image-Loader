@@ -58,32 +58,22 @@ public class BaseImageDecoder implements ImageDecoder {
 		this.loggingEnabled = loggingEnabled;
 	}
 
+	/**
+	 * 
+	 * @param decodingInfo
+	 * @param thumbnail
+	 * @return Decoded bitmap
+	 * @throws IOException       if some I/O exception occurs during image reading
+	 */
 	@Override
 	public Bitmap decode(ImageDecodingInfo decodingInfo, Bitmap thumbnail) throws IOException {
-		Bitmap decodedBitmap;
-		ImageFileInfo imageInfo;
 
-		InputStream imageStream = getImageStream(decodingInfo);
-		if (imageStream == null) {
+		if (thumbnail == null || thumbnail.isRecycled()) {
 			L.e(ERROR_NO_IMAGE_STREAM, decodingInfo.getImageKey());
 			return null;
 		}
-		try {
-			imageInfo = defineImageSizeAndRotation(imageStream, decodingInfo);
-			imageStream = resetStream(imageStream, decodingInfo);
-			prepareDecodingOptions(imageInfo.imageSize, decodingInfo);
-			decodedBitmap = thumbnail;
-		} finally {
-			IoUtils.closeSilently(imageStream);
-		}
-
-		if (decodedBitmap == null) {
-			L.e(ERROR_CANT_DECODE_IMAGE, decodingInfo.getImageKey());
-		} else {
-			decodedBitmap = considerExactScaleAndOrientatiton(decodedBitmap, decodingInfo, imageInfo.exif.rotation,
-					imageInfo.exif.flipHorizontal);
-		}
-		return decodedBitmap;
+		
+		return considerExactScaleAndOrientatiton(thumbnail, decodingInfo, 0, false);
 	}
 	
 	/**

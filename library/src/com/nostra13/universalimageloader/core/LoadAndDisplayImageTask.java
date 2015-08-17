@@ -61,6 +61,7 @@ final class LoadAndDisplayImageTask implements Runnable, IoUtils.CopyListener {
 	private static final String LOG_GET_IMAGE_FROM_MEMORY_CACHE_AFTER_WAITING = "...Get cached bitmap from memory after waiting. [%s]";
 	private static final String LOG_LOAD_IMAGE_FROM_NETWORK = "Load image from network [%s]";
 	private static final String LOG_LOAD_IMAGE_FROM_DISK_CACHE = "Load image from disk cache [%s]";
+	private static final String LOG_LOAD_IMAGE_FROM_THUMBNAIL = "Load image from thumbnail [%s]";
 	private static final String LOG_RESIZE_CACHED_IMAGE_FILE = "Resize image in disk cache [%s]";
 	private static final String LOG_PREPROCESS_IMAGE = "PreProcess image before caching in memory [%s]";
 	private static final String LOG_POSTPROCESS_IMAGE = "PostProcess image before displaying [%s]";
@@ -225,6 +226,7 @@ final class LoadAndDisplayImageTask implements Runnable, IoUtils.CopyListener {
 			}
 			
 			if(bitmap != null && !bitmap.isRecycled()) {
+				L.d(LOG_LOAD_IMAGE_FROM_THUMBNAIL, memoryCacheKey);
 				return decodeImage(uri, bitmap);
 			} else {
 				File imageFile = configuration.diskCache.get(uri);

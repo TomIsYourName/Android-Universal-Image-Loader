@@ -408,6 +408,11 @@ public class ImageLoader {
         		(ImageAware)(new ImageViewAware(imageView)), options, (ImageLoadingListener)null, (ImageLoadingProgressListener)null);
     }
 	
+	public void displayImage(ContentResolver resolver, String uri, long mediaId, int thumbnailKind, ImageAware imageAware, DisplayImageOptions options) {
+        this.displayImage(resolver, uri, mediaId, thumbnailKind,
+        		imageAware, options, (ImageLoadingListener)null, (ImageLoadingProgressListener)null);
+    }
+	
 	public void displayImage(ContentResolver resolver, String uri, long mediaId, int thumbnailKind, ImageAware imageAware, DisplayImageOptions options,
 			ImageLoadingListener listener, ImageLoadingProgressListener progressListener) {
 		checkConfiguration();
